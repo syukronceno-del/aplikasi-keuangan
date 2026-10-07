@@ -162,7 +162,7 @@ jumlah = int(jumlah_clean) if jumlah_clean.isdigit() else 0
 if jumlah > 0:
     c4.caption(f"Nominal terdeteksi: **Rp {jumlah:,.0f}**.replace(',', '.')")
     
-       catatan = st.text_input("Catatan Keterangan")
+catatan = st.text_input("Catatan Keterangan")
         
         submit = st.form_submit_button("💾 Simpan Transaksi", use_container_width=True)
         
