@@ -1,4 +1,8 @@
 import streamlit as st
+st.set_page_config(
+    page_title="Aplikasi Keuangan",
+    page_icon="💰"  # Bebas ganti emoji lain seperti: 💵, 📊, 💳, atau 💸
+)
 import pandas as pd
 import os
 from datetime import datetime
