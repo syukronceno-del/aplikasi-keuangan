@@ -50,6 +50,28 @@ if 'transaksi' not in st.session_state:
 if 'target' not in st.session_state:
     st.session_state.target = []
 
+# Callback Function untuk Format Titik Otomatis
+def format_nominal():
+    val = st.session_state.get('input_nominal_val', '').replace('.', '').replace(',', '').strip()
+    if val.isdigit() and int(val) > 0:
+        st.session_state['input_nominal_val'] = f"{int(val):,}".replace(',', '.')
+    else:
+        st.session_state['input_nominal_val'] = ""
+
+def format_target_dana():
+    val = st.session_state.get('input_target_val', '').replace('.', '').replace(',', '').strip()
+    if val.isdigit() and int(val) > 0:
+        st.session_state['input_target_val'] = f"{int(val):,}".replace(',', '.')
+    else:
+        st.session_state['input_target_val'] = ""
+
+def format_terkumpul_dana():
+    val = st.session_state.get('input_terkumpul_val', '').replace('.', '').replace(',', '').strip()
+    if val.isdigit() and int(val) > 0:
+        st.session_state['input_terkumpul_val'] = f"{int(val):,}".replace(',', '.')
+    else:
+        st.session_state['input_terkumpul_val'] = ""
+
 # 3. Sidebar Navigasi
 with st.sidebar:
     c1, c2, c3 = st.columns([1, 2, 1])
@@ -108,96 +130,4 @@ if selected == "Dashboard":
         if df.empty:
             st.info("Belum ada data transaksi yang dicatat.")
         else:
-            st.dataframe(df.tail(5), use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col_right:
-        st.markdown('<div class="css-card">', unsafe_allow_html=True)
-        st.subheader("📊 Analisis Pengeluaran")
-        if not df.empty:
-            df_keluar = df[df["Tipe"] == "Pengeluaran"]
-            if not df_keluar.empty:
-                kat_sum = df_keluar.groupby("Kategori")["Jumlah (Rp)"].sum()
-                st.bar_chart(kat_sum)
-            else:
-                st.caption("Belum ada data pengeluaran.")
-        else:
-            st.caption("Belum ada data pengeluaran.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# MENU 2: TRANSAKSI
-# ---------------------------------------------------------
-elif selected == "Transaksi":
-    st.markdown("""
-        <div class="main-header">
-            <h2>📝 Catatan Transaksi</h2>
-            <p>Tambah pemasukan atau pengeluaran baru ke dalam catatan</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    with st.form("form_transaksi", clear_on_submit=True):
-        st.subheader("➕ Form Input Transaksi")
-        c1, c2 = st.columns(2)
-        tgl = c1.date_input("Tanggal", datetime.date.today())
-        tipe = c2.selectbox("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
-        
-        c3, c4 = st.columns(2)
-        kategori = c3.selectbox("Kategori", [
-            "Gaji / Profit", "Makanan & Minuman", "Transportasi", 
-            "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
-        ])
-        
-        jumlah_raw = c4.text_input("Nominal (Rp)", value="", placeholder="Misal: 1000000 atau 1.000.000")
-        catatan = st.text_input("Catatan Keterangan")
-        
-        submit = st.form_submit_button("💾 Simpan Transaksi", use_container_width=True)
-        
-        if submit:
-            jumlah_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
-            jumlah = int(jumlah_clean) if jumlah_clean.isdigit() else 0
-            
-            if jumlah > 0:
-                new_data = pd.DataFrame([{
-                    "Tanggal": tgl,
-                    "Tipe": tipe,
-                    "Kategori": kategori,
-                    "Jumlah (Rp)": jumlah,
-                    "Catatan": catatan
-                }])
-                st.session_state.transaksi = pd.concat([st.session_state.transaksi, new_data], ignore_index=True)
-                st.success(f"Berhasil menyimpan transaksi Rp {jumlah:,.0f}".replace(",", "."))
-            else:
-                st.error("Nominal transaksi harus lebih besar dari 0.")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📜 Riwayat Lengkap Transaksi")
-    st.dataframe(st.session_state.transaksi, use_container_width=True)
-
-# ---------------------------------------------------------
-# MENU 3: TARGET IMPIAN
-# ---------------------------------------------------------
-elif selected == "Target Impian":
-    st.markdown("""
-        <div class="main-header">
-            <h2>🎯 Perencanaan Masa Depan</h2>
-            <p>Rencanakan dan pantau pencapaian target tabungan impian Anda</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    with st.form("form_target", clear_on_submit=True):
-        st.subheader("➕ Buat Target Impian Baru")
-        cx, cy, cz = st.columns(3)
-        nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)")
-        
-        target_raw = cy.text_input("Target Dana (Rp)", value="0")
-        terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", value="0")
-        
-        submit_target = st.form_submit_button("🎯 Simpan Target", use_container_width=True)
-        
-        if submit_target and nama_target:
-            t_clean = target_raw.replace(".", "").replace(",", "").strip()
-            tk_clean = terkumpul_raw.replace(".", "").replace(",", "").strip()
-            
-            target_dana = int(t_clean) if t_clean.isdigit() else 0
-            dana_ter
+            st.dataframe(df.tail(5), use_container_width=
