@@ -88,6 +88,106 @@ with st.sidebar:
         menu_icon="compass",
         default_index=0,
         styles={
-            "container": {"padding": "5!important", "background-color": "#f8f9fa", "border-radius": "10px"},
+            "container": {"padding": "5px", "background-color": "#f8f9fa", "border-radius": "10px"},
             "icon": {"color": "#17b978", "font-size": "18px"},
-            "nav-link": {"font-size": "14px", "text-align": "left", "margin": "2px", "--hover
+            "nav-link": {"font-size": "14px", "text-align": "left", "margin": "2px"},
+            "nav-link-selected": {"background-color": "#1e3d59", "color": "white", "font-weight": "bold"}
+        }
+    )
+
+# ---------------------------------------------------------
+# MENU 1: DASHBOARD
+# ---------------------------------------------------------
+if selected == "Dashboard":
+    st.markdown("""
+        <div class="main-header">
+            <h2>✨ Dashboard Keuangan</h2>
+            <p>Kelola arus kas dan pantau perkembangan finansial Anda secara realtime</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    df = st.session_state.transaksi
+    if not df.empty:
+        total_masuk = df[df["Tipe"] == "Pemasukan"]["Jumlah (Rp)"].sum()
+        total_keluar = df[df["Tipe"] == "Pengeluaran"]["Jumlah (Rp)"].sum()
+    else:
+        total_masuk = 0
+        total_keluar = 0
+        
+    sisa_saldo = total_masuk - total_keluar
+    
+    m1, m2, m3 = st.columns(3)
+    m1.metric("💵 Total Saldo", f"Rp {sisa_saldo:,.0f}".replace(",", "."))
+    m2.metric("📈 Total Pemasukan", f"Rp {total_masuk:,.0f}".replace(",", "."))
+    m3.metric("📉 Total Pengeluaran", f"Rp {total_keluar:,.0f}".replace(",", "."))
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_left, col_right = st.columns([1.5, 1])
+    
+    with col_left:
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
+        st.subheader("📋 Transaksi Terakhir")
+        if df.empty:
+            st.info("Belum ada data transaksi yang dicatat.")
+        else:
+            st.dataframe(df.tail(5), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col_right:
+        st.markdown('<div class="css-card">', unsafe_allow_html=True)
+        st.subheader("📊 Analisis Pengeluaran")
+        if not df.empty:
+            df_keluar = df[df["Tipe"] == "Pengeluaran"]
+            if not df_keluar.empty:
+                kat_sum = df_keluar.groupby("Kategori")["Jumlah (Rp)"].sum()
+                st.bar_chart(kat_sum)
+            else:
+                st.caption("Belum ada data pengeluaran.")
+        else:
+            st.caption("Belum ada data pengeluaran.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# MENU 2: TRANSAKSI
+# ---------------------------------------------------------
+elif selected == "Transaksi":
+    st.markdown("""
+        <div class="main-header">
+            <h2>📝 Catatan Transaksi</h2>
+            <p>Tambah pemasukan atau pengeluaran baru ke dalam catatan</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.subheader("➕ Form Input Transaksi")
+    c1, c2 = st.columns(2)
+    tgl = c1.date_input("Tanggal", datetime.date.today())
+    tipe = c2.selectbox("Tipe Transaksi", ["Pemasukan", "Pengeluaran"])
+    
+    c3, c4 = st.columns(2)
+    kategori = c3.selectbox("Kategori", [
+        "Gaji / Profit", "Makanan & Minuman", "Transportasi", 
+        "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
+    ])
+    
+    jumlah_raw = c4.text_input(
+        "Nominal (Rp)", 
+        key="input_nominal_val", 
+        on_change=format_nominal, 
+        placeholder="Contoh: 1000000"
+    )
+    
+    catatan = st.text_input("Catatan Keterangan")
+    
+    if st.button("💾 Simpan Transaksi", use_container_width=True):
+        jumlah_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
+        jumlah = int(jumlah_clean) if jumlah_clean.isdigit() else 0
+        
+        if jumlah > 0:
+            new_data = pd.DataFrame([{
+                "Tanggal": tgl,
+                "Tipe": tipe,
+                "Kategori": kategori,
+                "Jumlah (Rp)": jumlah,
+                "Catatan": catatan
+            }])
+            st.session_state.transaksi =
