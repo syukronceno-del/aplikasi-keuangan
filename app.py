@@ -1,4 +1,15 @@
 import streamlit as st
+import streamlit as st
+
+# Mengeset judul dan logo di tab browser
+st.set_page_config(
+    page_title="KEUANGANKU",
+    page_icon="logo.png",  # sesuaikan dengan nama file logo yang di-upload
+    layout="wide"
+)
+
+# Menampilkan logo di halaman utama
+st.image("logo.png", width=250)
 st.set_page_config(
     page_title="Aplikasi Keuangan",
     page_icon="💰"  # Bebas ganti emoji lain seperti: 💵, 📊, 💳, atau 💸
