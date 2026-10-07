@@ -151,7 +151,16 @@ elif selected == "Transaksi":
             "Gaji / Profit", "Makanan & Minuman", "Transportasi", 
             "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
         ])
-        jumlah = c4.number_input("Nominal (Rp)", min_value=0, step=10000)
+        # Menggunakan text_input dengan penanganan pemisah ribuan
+jumlah_raw = c4.text_input("Nominal (Rp)", value="0", placeholder="Misal: 2.250.000")
+
+# Membersihkan format titik/koma agar menjadi angka murni
+jumlah_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
+jumlah = int(jumlah_clean) if jumlah_clean.isdigit() else 0
+
+# Menampilkan pratinjau nominal yang sudah berformat titik di bawah input
+if jumlah > 0:
+    c4.caption(f"Nominal terdeteksi: **Rp {jumlah:,.0f}**.replace(',', '.')")
         
         catatan = st.text_input("Catatan Keterangan")
         
