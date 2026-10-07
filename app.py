@@ -136,15 +136,22 @@ elif selected == "Transaksi":
         "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
     ])
     
-    # Input Angka dengan format pemisah ribuan bawaan
-    jumlah = c4.number_input("Nominal (Rp)", min_value=0, step=1000, format="%d")
+    jumlah_raw = c4.text_input("Nominal (Rp)", value="", placeholder="Ketik angka, misal: 1000000")
+    
+    # Format Titik Instan yang Tampil di Bawah Kotak Input (Stabil & Tidak Hilang)
+    j_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
+    if j_clean.isdigit() and int(j_clean) > 0:
+        c4.markdown(f"💰 Nominal: **Rp {int(j_clean):,.0f}**".replace(",", "."), unsafe_allow_html=True)
+    
     catatan = st.text_input("Catatan Keterangan")
     
     if st.button("💾 Simpan Transaksi", use_container_width=True):
+        jumlah = int(j_clean) if j_clean.isdigit() else 0
+        
         if jumlah > 0:
-            new_row = pd.DataFrame([{"Tanggal": tgl, "Tipe": tipe, "Kategori": kategori, "Jumlah (Rp)": int(jumlah), "Catatan": catatan}])
+            new_row = pd.DataFrame([{"Tanggal": tgl, "Tipe": tipe, "Kategori": kategori, "Jumlah (Rp)": jumlah, "Catatan": catatan}])
             st.session_state.transaksi = pd.concat([st.session_state.transaksi, new_row], ignore_index=True)
-            st.success(f"Berhasil menyimpan transaksi Rp {int(jumlah):,.0f}".replace(",", "."))
+            st.success(f"Berhasil menyimpan transaksi Rp {jumlah:,.0f}".replace(",", "."))
             st.rerun()
         else:
             st.error("Nominal transaksi harus lebih besar dari 0.")
@@ -167,12 +174,23 @@ elif selected == "Target Impian":
     st.subheader("➕ Buat Target Impian Baru")
     cx, cy, cz = st.columns(3)
     nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)")
-    target_dana = cy.number_input("Target Dana (Rp)", min_value=0, step=100000, format="%d")
-    dana_terkumpul = cz.number_input("Dana Terkumpul Saat Ini (Rp)", min_value=0, step=100000, format="%d")
+    target_raw = cy.text_input("Target Dana (Rp)", placeholder="Contoh: 100000000")
+    terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", placeholder="Contoh: 10000000")
+    
+    tc_clean = target_raw.replace(".", "").replace(",", "").strip()
+    tk_clean = terkumpul_raw.replace(".", "").replace(",", "").strip()
+    
+    if tc_clean.isdigit() and int(tc_clean) > 0:
+        cy.markdown(f"🎯 Target: **Rp {int(tc_clean):,.0f}**".replace(",", "."))
+    if tk_clean.isdigit() and int(tk_clean) > 0:
+        cz.markdown(f"💵 Terkumpul: **Rp {int(tk_clean):,.0f}**".replace(",", "."))
     
     if st.button("🎯 Simpan Target", use_container_width=True):
         if nama_target:
-            st.session_state.target.append({"Nama": nama_target, "Target": int(target_dana), "Terkumpul": int(dana_terkumpul)})
+            target_dana = int(tc_clean) if tc_clean.isdigit() else 0
+            dana_terkumpul = int(tk_clean) if tk_clean.isdigit() else 0
+            
+            st.session_state.target.append({"Nama": nama_target, "Target": target_dana, "Terkumpul": dana_terkumpul})
             st.success("Target berhasil dibuat!")
             st.rerun()
         else:
