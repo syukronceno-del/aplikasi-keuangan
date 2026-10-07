@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS
+# 2. Custom CSS & JavaScript Auto-Format
 st.markdown("""
     <style>
     .main-header {
@@ -42,27 +42,37 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inisialisasi State
+# Inisialisasi State Data
 if 'transaksi' not in st.session_state:
     st.session_state.transaksi = pd.DataFrame(columns=["Tanggal", "Tipe", "Kategori", "Jumlah (Rp)", "Catatan"])
 
 if 'target' not in st.session_state:
     st.session_state.target = []
 
-# Callback Format Titik Ribuan
-def format_nominal():
-    val = st.session_state.get('input_nominal_val', '').replace('.', '').replace(',', '').strip()
-    st.session_state['input_nominal_val'] = f"{int(val):,}".replace(',', '.') if val.isdigit() and int(val) > 0 else ""
+# Function JavaScript untuk Format Realtime Per Tombol Diketik
+def inject_auto_format_js():
+    st.components.v1.html("""
+    <script>
+    const doc = window.parent.document;
+    const inputs = doc.querySelectorAll('input[type="text"]');
+    
+    inputs.forEach(input => {
+        if (!input.dataset.formatted) {
+            input.dataset.formatted = "true";
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value) {
+                    e.target.value = parseInt(value, 10).toLocaleString('id-ID');
+                } else {
+                    e.target.value = '';
+                }
+            });
+        }
+    });
+    </script>
+    """, height=0)
 
-def format_target_dana():
-    val = st.session_state.get('input_target_val', '').replace('.', '').replace(',', '').strip()
-    st.session_state['input_target_val'] = f"{int(val):,}".replace(',', '.') if val.isdigit() and int(val) > 0 else ""
-
-def format_terkumpul_dana():
-    val = st.session_state.get('input_terkumpul_val', '').replace('.', '').replace(',', '').strip()
-    st.session_state['input_terkumpul_val'] = f"{int(val):,}".replace(',', '.') if val.isdigit() and int(val) > 0 else ""
-
-# 3. Sidebar
+# 3. Sidebar Navigasi
 with st.sidebar:
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
@@ -84,7 +94,9 @@ with st.sidebar:
         }
     )
 
+# ---------------------------------------------------------
 # MENU 1: DASHBOARD
+# ---------------------------------------------------------
 if selected == "Dashboard":
     st.markdown("""
         <div class="main-header">
@@ -125,7 +137,9 @@ if selected == "Dashboard":
             st.caption("Belum ada data pengeluaran.")
         st.markdown('</div>', unsafe_allow_html=True)
 
+# ---------------------------------------------------------
 # MENU 2: TRANSAKSI
+# ---------------------------------------------------------
 elif selected == "Transaksi":
     st.markdown("""
         <div class="main-header">
@@ -145,8 +159,11 @@ elif selected == "Transaksi":
         "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
     ])
     
-    jumlah_raw = c4.text_input("Nominal (Rp)", key="input_nominal_val", on_change=format_nominal, placeholder="Contoh: 1000000")
+    jumlah_raw = c4.text_input("Nominal (Rp)", placeholder="Contoh: 1000000")
     catatan = st.text_input("Catatan Keterangan")
+    
+    # Jalankan JavaScript Auto-Format
+    inject_auto_format_js()
     
     if st.button("💾 Simpan Transaksi", use_container_width=True):
         j_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
@@ -156,7 +173,6 @@ elif selected == "Transaksi":
             new_row = pd.DataFrame([{"Tanggal": tgl, "Tipe": tipe, "Kategori": kategori, "Jumlah (Rp)": jumlah, "Catatan": catatan}])
             st.session_state.transaksi = pd.concat([st.session_state.transaksi, new_row], ignore_index=True)
             st.success(f"Berhasil menyimpan transaksi Rp {jumlah:,.0f}".replace(",", "."))
-            st.session_state['input_nominal_val'] = ""
             st.rerun()
         else:
             st.error("Nominal transaksi harus lebih besar dari 0.")
@@ -165,7 +181,9 @@ elif selected == "Transaksi":
     st.subheader("📜 Riwayat Lengkap Transaksi")
     st.dataframe(st.session_state.transaksi, use_container_width=True)
 
+# ---------------------------------------------------------
 # MENU 3: TARGET IMPIAN
+# ---------------------------------------------------------
 elif selected == "Target Impian":
     st.markdown("""
         <div class="main-header">
@@ -176,9 +194,11 @@ elif selected == "Target Impian":
     
     st.subheader("➕ Buat Target Impian Baru")
     cx, cy, cz = st.columns(3)
-    nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)", key="input_nama_target")
-    target_raw = cy.text_input("Target Dana (Rp)", key="input_target_val", on_change=format_target_dana, placeholder="Contoh: 100000000")
-    terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", key="input_terkumpul_val", on_change=format_terkumpul_dana, placeholder="Contoh: 10000000")
+    nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)")
+    target_raw = cy.text_input("Target Dana (Rp)", placeholder="Contoh: 100000000")
+    terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", placeholder="Contoh: 10000000")
+    
+    inject_auto_format_js()
     
     if st.button("🎯 Simpan Target", use_container_width=True):
         if nama_target:
@@ -189,8 +209,6 @@ elif selected == "Target Impian":
             
             st.session_state.target.append({"Nama": nama_target, "Target": target_dana, "Terkumpul": dana_terkumpul})
             st.success("Target berhasil dibuat!")
-            st.session_state['input_target_val'] = ""
-            st.session_state['input_terkumpul_val'] = ""
             st.rerun()
         else:
             st.error("Nama target tidak boleh kosong.")
@@ -213,7 +231,9 @@ elif selected == "Target Impian":
             """.replace(",", "."), unsafe_allow_html=True)
             st.progress(progres)
 
+# ---------------------------------------------------------
 # MENU 4: LAPORAN
+# ---------------------------------------------------------
 elif selected == "Laporan":
     st.markdown("""
         <div class="main-header">
