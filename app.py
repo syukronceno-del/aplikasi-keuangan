@@ -89,4 +89,4 @@ if selected == "Dashboard":
     total_keluar = df[df['Tipe'] == 'Pengeluaran']['Jumlah (Rp)'].sum() if not df.empty else 0
     sisa_saldo = total_masuk - total_keluar
     
-    m1, m2, m3 = st.columns(3
+    m1, m2, m3 = st.columns(3)
