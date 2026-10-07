@@ -9,7 +9,11 @@ st.set_page_config(
 )
 
 # Menampilkan logo di halaman utama
-st.image("logo.png", width=250)
+# Membuat 3 kolom dengan rasio (1, 2, 1) agar logo berada di tengah
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col2:
+    st.image("logo.png", use_container_width=True)
 st.set_page_config(
     page_title="Aplikasi Keuangan",
     page_icon="💰"  # Bebas ganti emoji lain seperti: 💵, 📊, 💳, atau 💸
