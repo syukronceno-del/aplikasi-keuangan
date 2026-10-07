@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS
+# 2. Custom CSS Modern
 st.markdown("""
     <style>
     .main-header {
@@ -42,52 +42,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Inisialisasi State Data
+# Inisialisasi Session State Data
 if 'transaksi' not in st.session_state:
     st.session_state.transaksi = pd.DataFrame(columns=["Tanggal", "Tipe", "Kategori", "Jumlah (Rp)", "Catatan"])
 
 if 'target' not in st.session_state:
     st.session_state.target = []
-
-# Skrip JavaScript Otomatis yang Aman Terhadap State Streamlit
-def inject_stable_auto_format():
-    st.components.v1.html("""
-    <script>
-    const doc = window.parent.document;
-    
-    function applyFormatting() {
-        const inputs = doc.querySelectorAll('input[type="text"]');
-        inputs.forEach(input => {
-            if (!input.dataset.boundFormat) {
-                input.dataset.boundFormat = "true";
-                input.addEventListener('input', function(e) {
-                    let cursorPosition = e.target.selectionStart;
-                    let originalLength = e.target.value.length;
-                    
-                    let rawValue = e.target.value.replace(/\D/g, '');
-                    if (rawValue) {
-                        let formatted = parseInt(rawValue, 10).toLocaleString('id-ID');
-                        e.target.value = formatted;
-                        
-                        // Pertahankan posisi kursor saat diketik
-                        let newLength = formatted.length;
-                        cursorPosition = cursorPosition + (newLength - originalLength);
-                        e.target.setSelectionRange(cursorPosition, cursorPosition);
-                    } else {
-                        e.target.value = '';
-                    }
-                    
-                    // Trigger native input event agar Streamlit React state terkonfirmasi
-                    e.target.dispatchEvent(new Event('change', { bubbles: true }));
-                });
-            }
-        });
-    }
-
-    // Jalankan format secara berkala untuk menangkap elemen baru tanpa mengganggu state
-    setInterval(applyFormatting, 300);
-    </script>
-    """, height=0)
 
 # 3. Sidebar Navigasi
 with st.sidebar:
@@ -176,19 +136,20 @@ elif selected == "Transaksi":
         "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
     ])
     
-    jumlah_raw = c4.text_input("Nominal (Rp)", key="trans_nominal", placeholder="Contoh: 1000000")
-    catatan = st.text_input("Catatan Keterangan", key="trans_catatan")
+    # st.number_input: Aman dari bug angka hilang dan secara otomatis menyimpan nilai asli
+    jumlah = c4.number_input("Nominal (Rp)", min_value=0, value=0, step=1000)
     
-    inject_stable_auto_format()
+    # Menampilkan format Rp dengan titik pemisah ribuan secara langsung di bawahnya
+    if jumlah > 0:
+        c4.caption(f"Terbilang: **Rp {jumlah:,.0f}**".replace(",", "."))
+        
+    catatan = st.text_input("Catatan Keterangan")
     
     if st.button("💾 Simpan Transaksi", use_container_width=True):
-        j_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
-        jumlah = int(j_clean) if j_clean.isdigit() else 0
-        
         if jumlah > 0:
-            new_row = pd.DataFrame([{"Tanggal": tgl, "Tipe": tipe, "Kategori": kategori, "Jumlah (Rp)": jumlah, "Catatan": catatan}])
+            new_row = pd.DataFrame([{"Tanggal": tgl, "Tipe": tipe, "Kategori": kategori, "Jumlah (Rp)": int(jumlah), "Catatan": catatan}])
             st.session_state.transaksi = pd.concat([st.session_state.transaksi, new_row], ignore_index=True)
-            st.success(f"Berhasil menyimpan transaksi Rp {jumlah:,.0f}".replace(",", "."))
+            st.success(f"Berhasil menyimpan transaksi Rp {int(jumlah):,.0f}".replace(",", "."))
             st.rerun()
         else:
             st.error("Nominal transaksi harus lebih besar dari 0.")
@@ -210,20 +171,13 @@ elif selected == "Target Impian":
     
     st.subheader("➕ Buat Target Impian Baru")
     cx, cy, cz = st.columns(3)
-    nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)", key="target_nama")
-    target_raw = cy.text_input("Target Dana (Rp)", key="target_dana", placeholder="Contoh: 100000000")
-    terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", key="target_terkumpul", placeholder="Contoh: 10000000")
-    
-    inject_stable_auto_format()
+    nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)")
+    target_dana = cy.number_input("Target Dana (Rp)", min_value=0, value=0, step=100000)
+    dana_terkumpul = cz.number_input("Dana Terkumpul Saat Ini (Rp)", min_value=0, value=0, step=100000)
     
     if st.button("🎯 Simpan Target", use_container_width=True):
         if nama_target:
-            tc = target_raw.replace(".", "").replace(",", "").strip()
-            tkc = terkumpul_raw.replace(".", "").replace(",", "").strip()
-            target_dana = int(tc) if tc.isdigit() else 0
-            dana_terkumpul = int(tkc) if tkc.isdigit() else 0
-            
-            st.session_state.target.append({"Nama": nama_target, "Target": target_dana, "Terkumpul": dana_terkumpul})
+            st.session_state.target.append({"Nama": nama_target, "Target": int(target_dana), "Terkumpul": int(dana_terkumpul)})
             st.success("Target berhasil dibuat!")
             st.rerun()
         else:
