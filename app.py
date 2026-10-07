@@ -164,7 +164,7 @@ if jumlah > 0:
     
 catatan = st.text_input("Catatan Keterangan")
         
-        submit = st.form_submit_button("💾 Simpan Transaksi", use_container_width=True)
+submit = st.form_submit_button("💾 Simpan Transaksi", use_container_width=True)
         
         if submit and jumlah > 0:
             new_data = pd.DataFrame([{
