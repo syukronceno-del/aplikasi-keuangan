@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS & JavaScript Auto-Format
+# 2. Custom CSS
 st.markdown("""
     <style>
     .main-header {
@@ -49,26 +49,43 @@ if 'transaksi' not in st.session_state:
 if 'target' not in st.session_state:
     st.session_state.target = []
 
-# Function JavaScript untuk Format Realtime Per Tombol Diketik
-def inject_auto_format_js():
+# Skrip JavaScript Otomatis yang Aman Terhadap State Streamlit
+def inject_stable_auto_format():
     st.components.v1.html("""
     <script>
     const doc = window.parent.document;
-    const inputs = doc.querySelectorAll('input[type="text"]');
     
-    inputs.forEach(input => {
-        if (!input.dataset.formatted) {
-            input.dataset.formatted = "true";
-            input.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value) {
-                    e.target.value = parseInt(value, 10).toLocaleString('id-ID');
-                } else {
-                    e.target.value = '';
-                }
-            });
-        }
-    });
+    function applyFormatting() {
+        const inputs = doc.querySelectorAll('input[type="text"]');
+        inputs.forEach(input => {
+            if (!input.dataset.boundFormat) {
+                input.dataset.boundFormat = "true";
+                input.addEventListener('input', function(e) {
+                    let cursorPosition = e.target.selectionStart;
+                    let originalLength = e.target.value.length;
+                    
+                    let rawValue = e.target.value.replace(/\D/g, '');
+                    if (rawValue) {
+                        let formatted = parseInt(rawValue, 10).toLocaleString('id-ID');
+                        e.target.value = formatted;
+                        
+                        // Pertahankan posisi kursor saat diketik
+                        let newLength = formatted.length;
+                        cursorPosition = cursorPosition + (newLength - originalLength);
+                        e.target.setSelectionRange(cursorPosition, cursorPosition);
+                    } else {
+                        e.target.value = '';
+                    }
+                    
+                    // Trigger native input event agar Streamlit React state terkonfirmasi
+                    e.target.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            }
+        });
+    }
+
+    // Jalankan format secara berkala untuk menangkap elemen baru tanpa mengganggu state
+    setInterval(applyFormatting, 300);
     </script>
     """, height=0)
 
@@ -159,11 +176,10 @@ elif selected == "Transaksi":
         "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
     ])
     
-    jumlah_raw = c4.text_input("Nominal (Rp)", placeholder="Contoh: 1000000")
-    catatan = st.text_input("Catatan Keterangan")
+    jumlah_raw = c4.text_input("Nominal (Rp)", key="trans_nominal", placeholder="Contoh: 1000000")
+    catatan = st.text_input("Catatan Keterangan", key="trans_catatan")
     
-    # Jalankan JavaScript Auto-Format
-    inject_auto_format_js()
+    inject_stable_auto_format()
     
     if st.button("💾 Simpan Transaksi", use_container_width=True):
         j_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
@@ -188,17 +204,17 @@ elif selected == "Target Impian":
     st.markdown("""
         <div class="main-header">
             <h2>🎯 Perencanaan Masa Depan</h2>
-            <p>Rencanakan dan pantau pencapaian target tabungan impian Anda</p>
+            <p>Rencanakan dan pantau perkembangan target tabungan impian Anda</p>
         </div>
     """, unsafe_allow_html=True)
     
     st.subheader("➕ Buat Target Impian Baru")
     cx, cy, cz = st.columns(3)
-    nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)")
-    target_raw = cy.text_input("Target Dana (Rp)", placeholder="Contoh: 100000000")
-    terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", placeholder="Contoh: 10000000")
+    nama_target = cx.text_input("Nama Target (mis: Beli Rumah, Umroh)", key="target_nama")
+    target_raw = cy.text_input("Target Dana (Rp)", key="target_dana", placeholder="Contoh: 100000000")
+    terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", key="target_terkumpul", placeholder="Contoh: 10000000")
     
-    inject_auto_format_js()
+    inject_stable_auto_format()
     
     if st.button("🎯 Simpan Target", use_container_width=True):
         if nama_target:
