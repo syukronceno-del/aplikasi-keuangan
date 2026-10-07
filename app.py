@@ -50,6 +50,16 @@ if 'transaksi' not in st.session_state:
 if 'target' not in st.session_state:
     st.session_state.target = []
 
+if 'nominal_input' not in st.session_state:
+    st.session_state.nominal_input = "0"
+
+def format_nominal():
+    val = st.session_state.nominal_input.replace(".", "").replace(",", "").strip()
+    if val.isdigit() and int(val) > 0:
+        st.session_state.nominal_input = f"{int(val):,}".replace(",", ".")
+    else:
+        st.session_state.nominal_input = "0"
+
 # 3. Sidebar Navigasi
 with st.sidebar:
     c1, c2, c3 = st.columns([1, 2, 1])
@@ -128,7 +138,7 @@ elif selected == "Transaksi":
         </div>
     """, unsafe_allow_html=True)
     
-    with st.form("form_transaksi", clear_on_submit=True):
+    with st.form("form_transaksi", clear_on_submit=False):
         st.subheader("➕ Form Input Transaksi")
         c1, c2 = st.columns(2)
         tgl = c1.date_input("Tanggal", datetime.date.today())
@@ -140,7 +150,13 @@ elif selected == "Transaksi":
             "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
         ])
         
-        jumlah_raw = c4.text_input("Nominal (Rp)", value="0", placeholder="Misal: 2500000")
+        jumlah_raw = c4.text_input(
+            "Nominal (Rp)", 
+            key="nominal_input", 
+            on_change=format_nominal, 
+            placeholder="Misal: 1.000.000"
+        )
+        
         catatan = st.text_input("Catatan Keterangan")
         
         submit = st.form_submit_button("💾 Simpan Transaksi", use_container_width=True)
@@ -159,6 +175,7 @@ elif selected == "Transaksi":
                 }])
                 st.session_state.transaksi = pd.concat([st.session_state.transaksi, new_data], ignore_index=True)
                 st.success(f"Berhasil menyimpan transaksi Rp {jumlah:,.0f}".replace(",", "."))
+                st.session_state.nominal_input = "0"
             else:
                 st.error("Nominal transaksi harus lebih besar dari 0.")
 
