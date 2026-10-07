@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Custom CSS & JavaScript Auto-Format
+# 2. Custom CSS
 st.markdown("""
     <style>
     .main-header {
@@ -48,29 +48,6 @@ if 'transaksi' not in st.session_state:
 
 if 'target' not in st.session_state:
     st.session_state.target = []
-
-# Function JavaScript untuk Format Realtime Per Tombol Diketik
-def inject_auto_format_js():
-    st.components.v1.html("""
-    <script>
-    const doc = window.parent.document;
-    const inputs = doc.querySelectorAll('input[type="text"]');
-    
-    inputs.forEach(input => {
-        if (!input.dataset.formatted) {
-            input.dataset.formatted = "true";
-            input.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value) {
-                    e.target.value = parseInt(value, 10).toLocaleString('id-ID');
-                } else {
-                    e.target.value = '';
-                }
-            });
-        }
-    });
-    </script>
-    """, height=0)
 
 # 3. Sidebar Navigasi
 with st.sidebar:
@@ -159,14 +136,16 @@ elif selected == "Transaksi":
         "Belanja Bulanan", "Tagihan & Utilitas", "Hiburan", "Lainnya"
     ])
     
-    jumlah_raw = c4.text_input("Nominal (Rp)", placeholder="Contoh: 1000000")
+    jumlah_raw = c4.text_input("Nominal (Rp)", value="", placeholder="Ketik angka, contoh: 1000000")
+    
+    # Pratinjau Otomatis Format Rupiah Berwarna Hijau
+    j_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
+    if j_clean.isdigit() and int(j_clean) > 0:
+        c4.markdown(f"👉 Nominal terdeteksi: **Rp {int(j_clean):,.0f}**".replace(",", "."), unsafe_allow_html=True)
+    
     catatan = st.text_input("Catatan Keterangan")
     
-    # Jalankan JavaScript Auto-Format
-    inject_auto_format_js()
-    
     if st.button("💾 Simpan Transaksi", use_container_width=True):
-        j_clean = jumlah_raw.replace(".", "").replace(",", "").strip()
         jumlah = int(j_clean) if j_clean.isdigit() else 0
         
         if jumlah > 0:
@@ -198,14 +177,19 @@ elif selected == "Target Impian":
     target_raw = cy.text_input("Target Dana (Rp)", placeholder="Contoh: 100000000")
     terkumpul_raw = cz.text_input("Dana Terkumpul Saat Ini (Rp)", placeholder="Contoh: 10000000")
     
-    inject_auto_format_js()
+    # Pratinjau Format Rupiah
+    tc_clean = target_raw.replace(".", "").replace(",", "").strip()
+    tk_clean = terkumpul_raw.replace(".", "").replace(",", "").strip()
+    
+    if tc_clean.isdigit() and int(tc_clean) > 0:
+        cy.markdown(f"👉 Target: **Rp {int(tc_clean):,.0f}**".replace(",", "."))
+    if tk_clean.isdigit() and int(tk_clean) > 0:
+        cz.markdown(f"👉 Terkumpul: **Rp {int(tk_clean):,.0f}**".replace(",", "."))
     
     if st.button("🎯 Simpan Target", use_container_width=True):
         if nama_target:
-            tc = target_raw.replace(".", "").replace(",", "").strip()
-            tkc = terkumpul_raw.replace(".", "").replace(",", "").strip()
-            target_dana = int(tc) if tc.isdigit() else 0
-            dana_terkumpul = int(tkc) if tkc.isdigit() else 0
+            target_dana = int(tc_clean) if tc_clean.isdigit() else 0
+            dana_terkumpul = int(tk_clean) if tk_clean.isdigit() else 0
             
             st.session_state.target.append({"Nama": nama_target, "Target": target_dana, "Terkumpul": dana_terkumpul})
             st.success("Target berhasil dibuat!")
